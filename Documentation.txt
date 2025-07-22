@@ -1,0 +1,3 @@
+Poker-Framework:
+	Config-File:
+		Path to folder with bots (.class-files)
