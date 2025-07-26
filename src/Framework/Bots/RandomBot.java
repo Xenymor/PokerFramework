@@ -30,11 +30,13 @@ public class RandomBot extends Player {
                 return new Action(ActionType.RAISE, (int) (Math.random() * stacks[playerIndex]));
             }
         } else {
-            // If the player needs to call or fold
+            // If the player needs to call, raise or fold
             if (random < 0.5) {
                 return new Action(ActionType.CALL, maxBet - bets[playerIndex]);
-            } else {
+            } else if (random < .75) {
                 return new Action(ActionType.RAISE, (int) (Math.random() * stacks[playerIndex]));
+            } else {
+                return new Action(ActionType.FOLD, 0);
             }
         }
     }
