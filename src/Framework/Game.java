@@ -228,6 +228,7 @@ public class Game {
             if (stacks[i] <= 0) {
                 folded[i] = true;
                 active[i] = false;
+                activePlayerCount--;
                 if (verbose) {
                     System.out.println("Player " + i + " has been eliminated.");
                 }
