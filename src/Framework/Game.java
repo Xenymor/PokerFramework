@@ -361,7 +361,59 @@ public class Game {
         return score;
     }
 
-    private void countCards(final List<Card> combined, final int[] counts, final int[] colorCounts) {
+    public static long evaluateHand(List<Card> combined) {
+        Collections.sort(combined);
+        int[] counts = new int[14];
+        int[] colorCounts = new int[4];
+
+        countCards(combined, counts, colorCounts);
+
+        int[] countCounts = new int[4];
+        for (int i = 1; i < counts.length; i++) {
+            final int count = counts[i];
+            if (count > 0) {
+                countCounts[count - 1]++;
+            }
+        }
+
+        List<Integer> straights = getStraights(counts);
+        boolean isFlush = isFlush(colorCounts);
+
+        int multiplier;
+        if (isStraightFlush(combined, colorCounts)) {
+            multiplier = 9; // Straight Flush
+        } else if (countCounts[3] > 0) {
+            multiplier = 8; // Four of a Kind
+        } else if ((countCounts[2] > 0 && countCounts[1] > 0) || countCounts[2] > 1) {
+            multiplier = 7; // Full House
+        } else if (isFlush) {
+            multiplier = 6; // Flush
+        } else if (straights.size() > 0) {
+            multiplier = 5; // Straight
+        } else if (countCounts[2] > 0) {
+            multiplier = 4; // Three of a Kind
+        } else if (countCounts[1] > 1) {
+            multiplier = 3; // Two Pair
+        } else if (countCounts[1] > 0) {
+            multiplier = 2; // One Pair
+        } else {
+            multiplier = 1; // High Card
+        }
+
+        List<Card> bestCards = getBestCards(combined, counts, colorCounts, multiplier, straights);
+        Collections.reverse(bestCards);  // ??
+        long score = bestCards.get(bestCards.size() - 1).number() * ((long) Math.pow(14, multiplier));
+        if ((multiplier == 5 || multiplier == 9) && bestCards.get(bestCards.size() - 1).number() == 13) {
+            score = bestCards.get(bestCards.size() - 2).number() * ((long) Math.pow(14, multiplier)); // Ace low
+        }
+        for (int i = bestCards.size() - 2; i >= 0; i--) {
+            score *= 14;
+            score += bestCards.get(i).number();
+        }
+        return score;
+    }
+
+    private static void countCards(final List<Card> combined, final int[] counts, final int[] colorCounts) {
         for (final Card card : combined) {
             counts[card.number()]++;
             colorCounts[card.color()]++;
@@ -371,7 +423,7 @@ public class Game {
         }
     }
 
-    private boolean isStraightFlush(List<Card> combined, final int[] colorCounts) {
+    private static boolean isStraightFlush(List<Card> combined, final int[] colorCounts) {
         int mostCommonColor = getMostCommonColor(colorCounts);
         combined = combined.stream()
                 .filter(card -> card.color() == mostCommonColor)
@@ -397,7 +449,7 @@ public class Game {
         return false;
     }
 
-    private void filterForColor(final List<Card> combined, final int mostCommonColor) {
+    private static void filterForColor(final List<Card> combined, final int mostCommonColor) {
         for (int i = combined.size() - 1; i >= 0; i--) {
             if (combined.get(i).color() != mostCommonColor) {
                 combined.remove(i);
@@ -405,7 +457,7 @@ public class Game {
         }
     }
 
-    private int getMostCommonColor(final int[] colorCounts) {
+    private static int getMostCommonColor(final int[] colorCounts) {
         int mostCommonColor = -1;
         int maxColorCount = 0;
         for (int i = 0; i < colorCounts.length; i++) {
@@ -420,7 +472,7 @@ public class Game {
     /**
      * Returns combination of 5 best cards; last Card is lowest
      */
-    private List<Card> getBestCards(final List<Card> combined, final int[] counts, final int[] colorCounts, final int multiplier, final List<Integer> straights) {
+    private static List<Card> getBestCards(final List<Card> combined, final int[] counts, final int[] colorCounts, final int multiplier, final List<Integer> straights) {
         List<Card> bestCards = new ArrayList<>();
         switch (multiplier) {
             case 1: // High Card
@@ -472,7 +524,7 @@ public class Game {
         return bestCards;
     }
 
-    private void addHighestStraight(final List<Card> combined, final List<Integer> straights, final List<Card> bestCards) {
+    private static void addHighestStraight(final List<Card> combined, final List<Integer> straights, final List<Card> bestCards) {
         int straightStart = straights.get(straights.size() - 1);
         if (straightStart == 0) {
             bestCards.add(combined.remove(combined.size() - 1)); // Ace low straight
@@ -489,7 +541,7 @@ public class Game {
         }
     }
 
-    private void addHighestQuadruplet(final List<Card> combined, final int[] counts, final List<Card> bestCards) {
+    private static void addHighestQuadruplet(final List<Card> combined, final int[] counts, final List<Card> bestCards) {
         for (int i = counts.length - 1; i >= 0; i--) {
             if (counts[i] >= 4) {
                 for (int j = combined.size() - 1; j >= 0; j--) {
@@ -506,7 +558,7 @@ public class Game {
         }
     }
 
-    private void addHighestTriplet(final List<Card> combined, final int[] counts, final List<Card> bestCards) {
+    private static void addHighestTriplet(final List<Card> combined, final int[] counts, final List<Card> bestCards) {
         for (int i = counts.length - 1; i >= 0; i--) {
             if (counts[i] >= 3) {
                 for (int j = combined.size() - 1; j >= 0; j--) {
@@ -523,13 +575,13 @@ public class Game {
         }
     }
 
-    private void fillBestCards(final List<Card> combined, final List<Card> bestCards) {
+    private static void fillBestCards(final List<Card> combined, final List<Card> bestCards) {
         while (bestCards.size() < 5 && !combined.isEmpty()) {
             bestCards.add(combined.remove(combined.size() - 1));
         }
     }
 
-    private void addHighestPair(final List<Card> combined, final int[] counts, final List<Card> bestCards) {
+    private static void addHighestPair(final List<Card> combined, final int[] counts, final List<Card> bestCards) {
         for (int i = counts.length - 1; i >= 0; i--) {
             if (counts[i] >= 2) {
                 for (int j = combined.size() - 1; j >= 0; j--) {
@@ -545,7 +597,7 @@ public class Game {
         }
     }
 
-    private List<Integer> getStraights(final int[] counts) {
+    private static List<Integer> getStraights(final int[] counts) {
         List<Integer> straightStarts = new ArrayList<>();
         int consecutive = 0;
         for (int i = 0; i < counts.length; i++) {
@@ -562,7 +614,7 @@ public class Game {
         return straightStarts;
     }
 
-    private boolean isFlush(final int[] colorCounts) {
+    private static boolean isFlush(final int[] colorCounts) {
         for (int count : colorCounts) {
             if (count >= 5) {
                 return true;
@@ -646,17 +698,6 @@ public class Game {
             default -> throw new IllegalArgumentException("Unknown action type: " + action.type());
         }
         return result;
-    }
-
-    private int previousActivePlayerBefore(final int startIndex) {
-        for (int i = playerCount - 1; i >= 0; i--) {
-            int index = (startIndex + i) % playerCount;
-            if (active[index] && !folded[index]) {
-                return index;
-            }
-        }
-        // No active player found
-        throw new IllegalStateException("No active player found after index " + startIndex);
     }
 
     private int nextActivePlayerAfter(final int startIndex) {

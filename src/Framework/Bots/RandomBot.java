@@ -13,6 +13,13 @@ public class RandomBot extends Player {
 
     public Action takeTurn(final List<Card> board, final int[] bets, final int[] stacks, final int pot, final int playerIndex) {
         int maxBet = getMaxBet(bets);
+
+        /*If you want to score your hand:
+        List<Card> combinedCards = new ArrayList<>(board);
+        combinedCards.add(hand[0]);
+        combinedCards.add(hand[1]);
+        long score = Game.evaluateHand(combinedCards);*/
+
         // Randomly choose an action
         double random = Math.random();
         if (maxBet <= bets[playerIndex]) {
