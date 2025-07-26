@@ -1,15 +1,16 @@
 package Framework;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import Framework.Bots.Player;
+
 import java.util.ArrayList;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         // Initialize the game
-        //TODO read the file
-        Game game = new Game(new ArrayList<>(), true);
+        ArrayList<Player> players = new ArrayList<>();
+        players.add(new Framework.Bots.RandomBot());
+        players.add(new Framework.Bots.RandomBot());
+        Game game = new Game(players, 5, 10, 450, true);
 
         game.prepareRound();
 

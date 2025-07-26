@@ -1,6 +1,8 @@
 package Framework;
 
-import java.io.IOException;
+import Framework.Bots.Player;
+import Framework.Bots.RandomBot;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,16 +34,14 @@ public class Game {
 
     boolean verbose;
 
-    public Game(final List<String> configLines, final boolean verbose) throws IOException {
-        // Initialize the game with the provided configuration lines
-        //TODO
+    public Game(final List<Player> players, int smallBlind, int bigBlind, int initialStackSize, final boolean verbose) {
 
         this.verbose = verbose;
 
-        initializePlayers(configLines);
-        initializeBlinds(configLines);
+        this.players = players;
+        initializeBlinds(smallBlind, bigBlind);
 
-        playerCount = players.size();
+        playerCount = this.players.size();
         activePlayerCount = playerCount;
         active = new boolean[playerCount];
         folded = new boolean[playerCount];
@@ -52,31 +52,29 @@ public class Game {
         cloneStacks = new int[playerCount];
         cloneBets = new int[playerCount];
 
-        initializeStacks(configLines);
+        initializeStacks(initialStackSize);
 
         board = new ArrayList<>();
 
         prepareCards();
     }
 
-    private void initializeStacks(final List<String> configLines) {
-        //TODO
+    private void initializeStacks(final int initialStackSize) {
         if (verbose) {
             System.out.println("Initializing stacks...");
         }
         for (int i = 0; i < playerCount; i++) {
-            stacks[i] = 1000; // Example starting stack
+            stacks[i] = initialStackSize;
             bets[i] = 0;
         }
     }
 
-    private void initializeBlinds(final List<String> configLines) {
-        //TODO
+    private void initializeBlinds(int smallBlind, int bigBlind) {
         if (verbose) {
             System.out.println("Initializing blinds...");
         }
-        smallBlind = 5;
-        bigBlind = 10;
+        this.smallBlind = smallBlind;
+        this.bigBlind = bigBlind;
     }
 
     private void initializeHands() {
@@ -114,15 +112,6 @@ public class Game {
                 deck.add(new Card(c, i + 1));
             }
         }
-    }
-
-    private void initializePlayers(final List<String> configLines) throws IOException {
-        if (verbose) {
-            System.out.println("Initializing players from configuration... " + configLines.size() + " lines.");
-        }
-        players = new ArrayList<>();
-        players.add(new RandomBot(""));
-        players.add(new RandomBot(""));
     }
 
     public void startRound() {
@@ -282,7 +271,7 @@ public class Game {
         return winners.stream().mapToInt(i -> i).toArray();
     }
 
-    private long evaluateHand(final int playerIndex) {
+    public long evaluateHand(final int playerIndex) {
         List<Card> playerHand = hands.get(playerIndex);
         List<Card> combined = new ArrayList<>(board);
         combined.addAll(playerHand);
@@ -298,7 +287,8 @@ public class Game {
         countCards(combined, counts, colorCounts);
 
         int[] countCounts = new int[4];
-        for (int count : counts) {
+        for (int i = 1; i < counts.length; i++) {
+            final int count = counts[i];
             if (count > 0) {
                 countCounts[count - 1]++;
             }

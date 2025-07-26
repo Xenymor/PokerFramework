@@ -1,14 +1,16 @@
-package Framework;
+package Framework.Bots;
 
-import java.io.IOException;
+import Framework.Action;
+import Framework.ActionType;
+import Framework.Card;
+
 import java.util.List;
 
 public class RandomBot extends Player {
-    public RandomBot(final String command) throws IOException {
-        super(command, true);
+    public RandomBot() {
+        super();
     }
 
-    @Override
     public Action takeTurn(final List<Card> board, final int[] bets, final int[] stacks, final int pot, final int playerIndex) {
         int maxBet = getMaxBet(bets);
         // Randomly choose an action
@@ -38,10 +40,5 @@ public class RandomBot extends Player {
             }
         }
         return maxBet;
-    }
-
-    @Override
-    public void newRound(final Card card1, final Card card2) {
-
     }
 }
