@@ -5,10 +5,14 @@ import Framework.ActionType;
 import Framework.Card;
 
 import java.util.List;
+import java.util.Random;
 
 public class RandomBot extends Player {
+    Random randomGenerator;
+
     public RandomBot() {
         super();
+        randomGenerator = new Random();
     }
 
     public Action takeTurn(final List<Card> board, final int[] bets, final int[] stacks, final int pot, final int playerIndex) {
@@ -21,7 +25,7 @@ public class RandomBot extends Player {
         long score = Game.evaluateHand(combinedCards);*/
 
         // Randomly choose an action
-        double random = Math.random();
+        double random = randomGenerator.nextDouble();
         if (maxBet <= bets[playerIndex]) {
             // If the player can check or call
             if (random < 0.5) {
