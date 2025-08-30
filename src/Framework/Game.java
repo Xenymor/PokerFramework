@@ -229,7 +229,7 @@ public class Game {
      */
     private void eliminatePlayers() {
         for (int i = 0; i < playerCount; i++) {
-            if (stacks[i] <= 0) {
+            if (stacks[i] <= 0 && active[i]) {
                 folded[i] = true;
                 active[i] = false;
                 activePlayerCount--;
