@@ -1,7 +1,6 @@
 package Framework;
 
 import Framework.Bots.Player;
-import Framework.Bots.RandomBot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -189,13 +188,15 @@ public class Game {
                     if (verbose) {
                         System.out.println("Dealing the turn...");
                     }
-                    board.add(deck.get(deckIndex++));
+                    board.add(deck.get(deckIndex));
+                    deckIndex++;
                     break;
                 case 2: // Turn
                     if (verbose) {
                         System.out.println("Dealing the river...");
                     }
-                    board.add(deck.get(deckIndex++));
+                    board.add(deck.get(deckIndex));
+                    deckIndex++;
                     break;
                 case 3: // River
                     if (verbose) {
@@ -223,6 +224,9 @@ public class Game {
         }
     }
 
+    /**
+     * Eliminates all players that are broke.
+     */
     private void eliminatePlayers() {
         for (int i = 0; i < playerCount; i++) {
             if (stacks[i] <= 0) {
@@ -272,13 +276,13 @@ public class Game {
         return winners.stream().mapToInt(i -> i).toArray();
     }
 
-    public long evaluateHand(final int playerIndex) {
+    private long evaluateHand(final int playerIndex) {
         List<Card> playerHand = hands.get(playerIndex);
         List<Card> combined = new ArrayList<>(board);
         combined.addAll(playerHand);
 
         Collections.sort(combined);
-        int[] counts = new int[14];
+        int[] counts = new int[14]; //13 cards in total + ace low for straights
         int[] colorCounts = new int[4];
 
         if (verbose) {
@@ -319,7 +323,7 @@ public class Game {
             if (verbose) {
                 System.out.println(" \tPlayer " + playerIndex + " has a Flush.");
             }
-        } else if (straights.size() > 0) {
+        } else if (!straights.isEmpty()) {
             multiplier = 5; // Straight
             if (verbose) {
                 System.out.println(" \tPlayer " + playerIndex + " has a Straight.");
@@ -347,9 +351,9 @@ public class Game {
         }
 
         List<Card> bestCards = getBestCards(combined, counts, colorCounts, multiplier, straights);
-        Collections.reverse(bestCards);  // ??
-        long score = bestCards.get(bestCards.size() - 1).number() * ((long) Math.pow(14, multiplier));
-        if ((multiplier == 5 || multiplier == 9) && bestCards.get(bestCards.size() - 1).number() == 13) {
+        Collections.reverse(bestCards);
+        long score = bestCards.getLast().number() * ((long) Math.pow(14, multiplier));
+        if ((multiplier == 5 || multiplier == 9) && bestCards.getLast().number() == 13) {
             score = bestCards.get(bestCards.size() - 2).number() * ((long) Math.pow(14, multiplier)); // Ace low
         }
         for (int i = bestCards.size() - 2; i >= 0; i--) {
@@ -429,12 +433,13 @@ public class Game {
         combined = combined.stream()
                 .filter(card -> card.color() == mostCommonColor)
                 .collect(Collectors.toList());
+        //TODO remove loop? (maybe no need to test for multiple starting cards)
         for (int i = -1; i < combined.size() - 5; i++) {
             List<Card> curr = new ArrayList<>(combined.subList(Math.max(i, 0), i + 5));
             if (i == -1) {
-                final Card highestCard = combined.get(combined.size() - 1);
+                final Card highestCard = combined.getLast();
                 if (highestCard.number() == 13) {
-                    curr.add(0, highestCard);
+                    curr.addFirst(highestCard);
                 } else {
                     continue;
                 }
@@ -504,6 +509,7 @@ public class Game {
                 }
                 break;
             case 7: // Full House
+                //TODO handle two triplet full house
                 addHighestTriplet(combined, counts, bestCards);
                 addHighestPair(combined, counts, bestCards);
                 break;
@@ -526,9 +532,9 @@ public class Game {
     }
 
     private static void addHighestStraight(final List<Card> combined, final List<Integer> straights, final List<Card> bestCards) {
-        int straightStart = straights.get(straights.size() - 1);
+        int straightStart = straights.getLast();
         if (straightStart == 0) {
-            bestCards.add(combined.remove(combined.size() - 1)); // Ace low straight
+            bestCards.add(combined.removeLast()); // Ace low straight
             straightStart = 1; // Adjust to start from 1
         }
         int index = 0;
@@ -578,7 +584,7 @@ public class Game {
 
     private static void fillBestCards(final List<Card> combined, final List<Card> bestCards) {
         while (bestCards.size() < 5 && !combined.isEmpty()) {
-            bestCards.add(combined.remove(combined.size() - 1));
+            bestCards.add(combined.removeLast());
         }
     }
 
@@ -649,7 +655,7 @@ public class Game {
         if (verbose) {
             System.out.println("Player " + playerIndex + " is taking action: " + action);
         }
-        int result = startingPlayerIndex;
+        int newStartingPlayerIndex = startingPlayerIndex;
         int localToCall = toCall - bets[playerIndex];
         switch (action.type()) {
             case FOLD -> {
@@ -683,7 +689,7 @@ public class Game {
                 if (raiseAmount <= localToCall) {
                     raiseAmount = localToCall;
                 } else {
-                    result = playerIndex;
+                    newStartingPlayerIndex = playerIndex;
                 }
 
                 // Ensure raise amount does not exceed player's stack
@@ -698,7 +704,7 @@ public class Game {
             }
             default -> throw new IllegalArgumentException("Unknown action type: " + action.type());
         }
-        return result;
+        return newStartingPlayerIndex;
     }
 
     private int nextActivePlayerAfter(final int startIndex) {
