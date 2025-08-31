@@ -350,7 +350,7 @@ public class Game {
             }
         }
 
-        List<Card> bestCards = getBestCards(combined, counts, colorCounts, multiplier, straights);
+        List<Card> bestCards = getBestCards(combined, counts, countCounts, colorCounts, multiplier, straights);
         Collections.reverse(bestCards);
         long score = bestCards.getLast().number() * ((long) Math.pow(14, multiplier));
         if ((multiplier == 5 || multiplier == 9) && bestCards.getLast().number() == 13) {
@@ -405,7 +405,7 @@ public class Game {
             multiplier = 1; // High Card
         }
 
-        List<Card> bestCards = getBestCards(combined, counts, colorCounts, multiplier, straights);
+        List<Card> bestCards = getBestCards(combined, counts, countCounts, colorCounts, multiplier, straights);
         Collections.reverse(bestCards);  // ??
         long score = bestCards.get(bestCards.size() - 1).number() * ((long) Math.pow(14, multiplier));
         if ((multiplier == 5 || multiplier == 9) && bestCards.get(bestCards.size() - 1).number() == 13) {
@@ -478,7 +478,7 @@ public class Game {
     /**
      * Returns combination of 5 best cards; last Card is lowest
      */
-    private static List<Card> getBestCards(final List<Card> combined, final int[] counts, final int[] colorCounts, final int multiplier, final List<Integer> straights) {
+    private static List<Card> getBestCards(final List<Card> combined, final int[] counts, final int[] countCounts, final int[] colorCounts, final int multiplier, final List<Integer> straights) {
         List<Card> bestCards = new ArrayList<>();
         switch (multiplier) {
             case 1: // High Card
@@ -509,9 +509,13 @@ public class Game {
                 }
                 break;
             case 7: // Full House
-                //TODO handle two triplet full house
                 addHighestTriplet(combined, counts, bestCards);
-                addHighestPair(combined, counts, bestCards);
+                if (countCounts[2] > 1) {
+                    addHighestTriplet(combined, counts, bestCards);
+                    bestCards.removeLast();
+                } else {
+                    addHighestPair(combined, counts, bestCards);
+                }
                 break;
             case 8: // Four of a Kind
                 addHighestQuadruplet(combined, counts, bestCards);
