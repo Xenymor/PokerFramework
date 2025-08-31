@@ -455,8 +455,8 @@ public class Game {
 
         List<Card> bestCards = getBestCards(combined, counts, countCounts, colorCounts, multiplier, straights, straightFlushs);
         Collections.reverse(bestCards);  // ??
-        long score = bestCards.get(bestCards.size() - 1).number() * ((long) Math.pow(14, multiplier));
-        if ((multiplier == 5 || multiplier == 9) && bestCards.get(bestCards.size() - 1).number() == 13) {
+        long score = bestCards.getLast().number() * ((long) Math.pow(14, multiplier));
+        if ((multiplier == 5 || multiplier == 9) && bestCards.getLast().number() == 13) {
             score = bestCards.get(bestCards.size() - 2).number() * ((long) Math.pow(14, multiplier)); // Ace low
         }
         for (int i = bestCards.size() - 2; i >= 0; i--) {
