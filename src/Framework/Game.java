@@ -52,10 +52,10 @@ public class Game {
         cloneBets = new int[playerCount];
 
         initializeStacks(initialStackSize);
+        initializeDeck();
+        initializeHands();
 
         board = new ArrayList<>();
-
-        prepareCards();
     }
 
     private void initializeStacks(final int initialStackSize) {
@@ -88,7 +88,6 @@ public class Game {
             System.out.println("Initializing deck...");
         }
         createCards();
-        shuffleDeck();
     }
 
     private void shuffleDeck() {
@@ -98,6 +97,7 @@ public class Game {
             int index = (int) (Math.random() * stack.size());
             deck.add(stack.remove(index));
         }
+        deckIndex = 0;
         if (verbose) {
             System.out.println("Deck shuffled: ");
             System.out.println("\t" + deck);
@@ -765,7 +765,7 @@ public class Game {
     }
 
     private void prepareCards() {
-        initializeDeck();
+        shuffleDeck();
         initializeHands();
     }
 
