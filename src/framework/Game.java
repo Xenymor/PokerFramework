@@ -441,7 +441,7 @@ public class Game {
             multiplier = 7; // Full House
         } else if (isFlush) {
             multiplier = 6; // Flush
-        } else if (straights.size() > 0) {
+        } else if (!straights.isEmpty()) {
             multiplier = 5; // Straight
         } else if (countCounts[2] > 0) {
             multiplier = 4; // Three of a Kind
