@@ -1,4 +1,4 @@
-package Framework;
+package framework;
 
 public record Card(int color, int number) implements Comparable<Card> {
 

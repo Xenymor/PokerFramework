@@ -1,4 +1,4 @@
-package Framework;
+package framework;
 
 public enum ActionType {
     CHECK, CALL, RAISE, FOLD;

@@ -1,7 +1,7 @@
-package Framework.Bots;
+package bots;
 
-import Framework.Action;
-import Framework.Card;
+import framework.Action;
+import framework.Card;
 
 import java.util.List;
 

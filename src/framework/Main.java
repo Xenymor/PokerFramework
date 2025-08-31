@@ -1,8 +1,8 @@
-package Framework;
+package framework;
 
-import Framework.Bots.AllInBot;
-import Framework.Bots.Player;
-import Framework.Bots.RandomBot;
+import bots.AllInBot;
+import bots.Player;
+import bots.RandomBot;
 
 import java.util.ArrayList;
 

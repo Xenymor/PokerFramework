@@ -1,6 +1,6 @@
-package Framework;
+package framework;
 
-import Framework.Bots.Player;
+import bots.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Game {
-    List<Player> players;
-    boolean[] active;
-    boolean[] folded;
+    final List<Player> players;
+    final boolean[] active;
+    final boolean[] folded;
     List<List<Card>> hands;
-    List<Card> board;
+    final List<Card> board;
 
     final int[] stacks;
     final int[] bets;
@@ -31,7 +31,7 @@ public class Game {
     int smallBlind;
     int bigBlind;
 
-    boolean verbose;
+    final boolean verbose;
 
     public Game(final List<Player> players, int smallBlind, int bigBlind, int initialStackSize, final boolean verbose) {
 

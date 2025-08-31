@@ -1,4 +1,4 @@
-package Framework;
+package framework;
 
 public record Action(ActionType type, int amount) {
 

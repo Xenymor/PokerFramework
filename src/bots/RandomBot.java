@@ -1,14 +1,14 @@
-package Framework.Bots;
+package bots;
 
-import Framework.Action;
-import Framework.ActionType;
-import Framework.Card;
+import framework.Action;
+import framework.ActionType;
+import framework.Card;
 
 import java.util.List;
 import java.util.Random;
 
 public class RandomBot extends Player {
-    Random randomGenerator;
+    final Random randomGenerator;
 
     public RandomBot() {
         super();
