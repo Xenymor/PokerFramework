@@ -32,7 +32,7 @@ public class Game {
     int bigBlind;
 
     final boolean verbose;
-    private int[] maxBets;
+    private final int[] maxBets;
 
     public Game(final List<Player> players, int smallBlind, int bigBlind, int initialStackSize, final boolean verbose) {
 
@@ -285,15 +285,6 @@ public class Game {
         for (int minIndex : minIndexes) {
             folded[minIndex] = true;
         }
-    }
-
-    private boolean contains(final int[] winners, final int i) {
-        for (int winner : winners) {
-            if (winner == i) {
-                return true;
-            }
-        }
-        return false;
     }
 
 
@@ -592,15 +583,10 @@ public class Game {
 
     private static void addStraight(final List<Card> combined, final List<Card> bestCards, final int straightStart) {
         int value = straightStart + 5 - 1;
-        int counter = 0;
-        if (straightStart == 1) {
-            counter++;
-        }
         for (int i = combined.size()-1; i >= 0 && bestCards.size() < 5; i--) {
             if (combined.get(i).number() == value) {
                 bestCards.add(combined.remove(i));
                 value--;
-                counter++;
             }
         }
     }
