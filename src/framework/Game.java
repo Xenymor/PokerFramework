@@ -33,6 +33,7 @@ public class Game {
 
     final boolean verbose;
     private final int[] maxBets;
+    private final int initialStackSize;
 
     public Game(final List<Player> players, int smallBlind, int bigBlind, int initialStackSize, final boolean verbose) {
 
@@ -40,6 +41,7 @@ public class Game {
 
         this.players = players;
         initializeBlinds(smallBlind, bigBlind);
+        this.initialStackSize = initialStackSize;
 
         playerCount = this.players.size();
         activePlayerCount = playerCount;
@@ -53,7 +55,7 @@ public class Game {
         cloneStacks = new int[playerCount];
         cloneBets = new int[playerCount];
 
-        initializeStacks(initialStackSize);
+        initializeStacks();
         initializeDeck();
         initializeHands();
 
@@ -61,12 +63,12 @@ public class Game {
         scores = new long[playerCount];
     }
 
-    private void initializeStacks(final int initialStackSize) {
+    private void initializeStacks() {
         if (verbose) {
             System.out.println("Initializing stacks...");
         }
         for (int i = 0; i < playerCount; i++) {
-            stacks[i] = initialStackSize;
+            stacks[i] = this.initialStackSize;
             bets[i] = 0;
             maxBets[i] = 0;
         }
@@ -157,7 +159,7 @@ public class Game {
                     System.out.println("Current pot: " + pot);
                 }
 
-                Action action = player.takeTurn(cloneBoard, cloneBets, cloneStacks, pot, currPlayerIndex);
+                Action action = player.takeTurn(cloneBoard, cloneBets, cloneStacks, pot, currPlayerIndex, toCall);
                 startingPlayerIndex = takeAction(action, currPlayerIndex, startingPlayerIndex, toCall);
 
                 if (bets[currPlayerIndex] > toCall) {
@@ -573,7 +575,6 @@ public class Game {
         if (straightStart == 0) {
             isAceLowStraight = true;
             bestCards.add(combined.removeLast()); // Ace low straight
-            straightStart = 4; // Adjust to start from 1
         }
         addStraight(combined, bestCards, straightStart);
         if (isAceLowStraight) {
@@ -728,10 +729,24 @@ public class Game {
             case RAISE -> {
                 int raiseAmount = action.amount();
 
-                // Ensure raise amount is at least the bet to call
                 if (raiseAmount <= localToCall) {
                     raiseAmount = localToCall;
-                } else {
+                }
+
+                int maxCallCapacity = 0;
+                for (int i = 0; i < playerCount; i++) {
+                    if (i == playerIndex) {
+                        continue;
+                    }
+                    final int money = stacks[i] + bets[i];
+                    if (money > maxCallCapacity) {
+                        maxCallCapacity = money;
+                    }
+                }
+
+                raiseAmount = Math.min(maxCallCapacity, raiseAmount);
+                // Ensure raise amount is at least the bet to call
+                if (raiseAmount > localToCall) {
                     newStartingPlayerIndex = playerIndex;
                 }
 
@@ -837,5 +852,18 @@ public class Game {
             }
         }
         throw new IllegalStateException();
+    }
+
+    public void resetGame() {
+        activePlayerCount = playerCount;
+        Arrays.fill(active, true);
+        Arrays.fill(folded, false);
+
+        initializeStacks();
+        initializeDeck();
+        initializeHands();
+
+        board.clear();
+        scores = new long[playerCount];
     }
 }

@@ -17,6 +17,6 @@ public abstract class Player {
         this.hand[1] = card2;
     }
 
-    public abstract Action takeTurn(final List<Card> cloneBoard, final int[] cloneBets, final int[] cloneStacks, final int pot, final int currPlayerIndex);
+    public abstract Action takeTurn(final List<Card> cloneBoard, final int[] cloneBets, final int[] cloneStacks, final int pot, final int currPlayerIndex, final int toCall);
 
 }
