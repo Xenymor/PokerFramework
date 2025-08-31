@@ -9,30 +9,30 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Game {
-    final List<Player> players;
-    final boolean[] active;
-    final boolean[] folded;
-    List<List<Card>> hands;
-    final List<Card> board;
+    private final List<Player> players;
+    private final boolean[] active;
+    private final boolean[] folded;
+    private List<List<Card>> hands;
+    private final List<Card> board;
 
-    final int[] stacks;
-    final int[] bets;
-    final int[] cloneStacks;
-    final int[] cloneBets;
-    final List<Card> cloneBoard = new ArrayList<>();
-    int pot;
+    private final int[] stacks;
+    private final int[] bets;
+    private final int[] cloneStacks;
+    private final int[] cloneBets;
+    private final List<Card> cloneBoard = new ArrayList<>();
+    private int pot;
 
-    List<Card> deck;
-    int deckIndex = 0;
-    int dealerIndex;
+    private List<Card> deck;
+    private int deckIndex = 0;
+    private int dealerIndex;
 
-    final int playerCount;
+    private final int playerCount;
     int activePlayerCount;
-    int smallBlind;
-    int bigBlind;
+    private int smallBlind;
+    private int bigBlind;
 
-    final boolean verbose;
-    private final int[] maxBets;
+    private final boolean verbose;
+    private final int[] betSums;
     private final int initialStackSize;
 
     public Game(final List<Player> players, int smallBlind, int bigBlind, int initialStackSize, final boolean verbose) {
@@ -51,7 +51,7 @@ public class Game {
         Arrays.fill(folded, false);
         stacks = new int[playerCount];
         bets = new int[playerCount];
-        maxBets = new int[playerCount];
+        betSums = new int[playerCount];
         cloneStacks = new int[playerCount];
         cloneBets = new int[playerCount];
 
@@ -70,7 +70,7 @@ public class Game {
         for (int i = 0; i < playerCount; i++) {
             stacks[i] = this.initialStackSize;
             bets[i] = 0;
-            maxBets[i] = 0;
+            betSums[i] = 0;
         }
     }
 
@@ -227,7 +227,7 @@ public class Game {
     private void addBetsToPot() {
         for (int i = 0; i < playerCount; i++) {
             pot += bets[i];
-            maxBets[i] += bets[i];
+            betSums[i] += bets[i];
             bets[i] = 0; // Reset bets after adding to pot
         }
         if (verbose) {
@@ -258,7 +258,7 @@ public class Game {
         int currPot = 0;
 
         for (int winnerIndex : winners) {
-            final int bet = maxBets[winnerIndex];
+            final int bet = betSums[winnerIndex];
             if (bet < minBet) {
                 minBet = bet;
                 minIndexes.clear();
@@ -269,10 +269,10 @@ public class Game {
         }
 
         for (int i = 0; i < playerCount; i++) {
-            final int bet = maxBets[i];
+            final int bet = betSums[i];
             int modifier = Math.min(bet, minBet);
             currPot += modifier;
-            maxBets[i] -= modifier;
+            betSums[i] -= modifier;
         }
 
         final int wonAmount = currPot / winners.length;
@@ -824,7 +824,7 @@ public class Game {
         hands.clear();
         for (int i = 0; i < playerCount; i++) {
             bets[i] = 0;
-            maxBets[i] = 0;
+            betSums[i] = 0;
         }
         Arrays.fill(folded, false);
         prepareCards();
