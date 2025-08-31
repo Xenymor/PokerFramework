@@ -32,6 +32,7 @@ public class Game {
     int bigBlind;
 
     final boolean verbose;
+    private int[] maxBets;
 
     public Game(final List<Player> players, int smallBlind, int bigBlind, int initialStackSize, final boolean verbose) {
 
@@ -48,6 +49,7 @@ public class Game {
         Arrays.fill(folded, false);
         stacks = new int[playerCount];
         bets = new int[playerCount];
+        maxBets = new int[playerCount];
         cloneStacks = new int[playerCount];
         cloneBets = new int[playerCount];
 
@@ -56,6 +58,7 @@ public class Game {
         initializeHands();
 
         board = new ArrayList<>();
+        scores = new long[playerCount];
     }
 
     private void initializeStacks(final int initialStackSize) {
@@ -65,6 +68,7 @@ public class Game {
         for (int i = 0; i < playerCount; i++) {
             stacks[i] = initialStackSize;
             bets[i] = 0;
+            maxBets[i] = 0;
         }
     }
 
@@ -122,6 +126,7 @@ public class Game {
             }
         }
         dealCards();
+        useCachedScores = false;
         for (int i = 0; i < playerCount; i++) {
             final List<Card> cards = hands.get(i);
             players.get(i).newRound(cards.get(0), cards.get(1));
@@ -168,6 +173,7 @@ public class Game {
                     if (verbose) {
                         System.out.println("Only one player left active, ending round.");
                     }
+                    addBetsToPot();
                     break outer;
                 }
             } while (currPlayerIndex != startingPlayerIndex);
@@ -209,14 +215,17 @@ public class Game {
         if (verbose) {
             System.out.println("Round ended. Board: " + board);
         }
-        int[] winners = getWinners();
-        splitPot(winners);
+        while (pot > 0) {
+            int[] winners = getWinners();
+            splitPot(winners);
+        }
         eliminatePlayers();
     }
 
     private void addBetsToPot() {
         for (int i = 0; i < playerCount; i++) {
             pot += bets[i];
+            maxBets[i] += bets[i];
             bets[i] = 0; // Reset bets after adding to pot
         }
         if (verbose) {
@@ -241,15 +250,55 @@ public class Game {
     }
 
     private void splitPot(final int[] winners) {
+        List<Integer> minIndexes = new ArrayList<>(playerCount);
+        int minBet = Integer.MAX_VALUE;
+
+        int currPot = 0;
+
         for (int winnerIndex : winners) {
-            int winnings = pot / winners.length;
-            stacks[winnerIndex] += winnings;
-            if (verbose) {
-                System.out.println("Player " + winnerIndex + " wins " + winnings + " chips.");
+            final int bet = maxBets[winnerIndex];
+            if (bet < minBet) {
+                minBet = bet;
+                minIndexes.clear();
+                minIndexes.add(winnerIndex);
+            } else if (bet == minBet) {
+                minIndexes.add(winnerIndex);
             }
         }
-        pot = 0; // Reset pot after splitting
+
+        for (int i = 0; i < playerCount; i++) {
+            final int bet = maxBets[i];
+            int modifier = Math.min(bet, minBet);
+            currPot += modifier;
+            maxBets[i] -= modifier;
+        }
+
+        final int wonAmount = currPot / winners.length;
+        for (int winnerIndex : winners) {
+            stacks[winnerIndex] += wonAmount;
+            if (verbose) {
+                System.out.println("Player " + winnerIndex + " wins " + wonAmount + " chips.");
+            }
+        }
+
+        pot -= currPot;
+        for (int minIndex : minIndexes) {
+            folded[minIndex] = true;
+        }
     }
+
+    private boolean contains(final int[] winners, final int i) {
+        for (int winner : winners) {
+            if (winner == i) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    long[] scores;
+    boolean useCachedScores = false;
 
     private int[] getWinners() {
         List<Integer> activePlayers = new ArrayList<>();
@@ -264,7 +313,13 @@ public class Game {
         long bestScore = -1;
         List<Integer> winners = new ArrayList<>();
         for (int playerIndex : activePlayers) {
-            long score = evaluateHand(playerIndex);
+            long score;
+            if (!useCachedScores) {
+                score = evaluateHand(playerIndex);
+                scores[playerIndex] = score;
+            } else {
+                score = scores[playerIndex];
+            }
             if (score > bestScore) {
                 bestScore = score;
                 winners.clear();
@@ -273,6 +328,7 @@ public class Game {
                 winners.add(playerIndex);
             }
         }
+        useCachedScores = true;
         return winners.stream().mapToInt(i -> i).toArray();
     }
 
@@ -352,7 +408,6 @@ public class Game {
         }
 
         List<Card> bestCards = getBestCards(combined, counts, countCounts, colorCounts, multiplier, straights, straightFlushs);
-        Collections.reverse(bestCards);
         long score = bestCards.getLast().number() * ((long) Math.pow(14, multiplier));
         if ((multiplier == 5 || multiplier == 9) && bestCards.getLast().number() == 13) {
             score = bestCards.get(bestCards.size() - 2).number() * ((long) Math.pow(14, multiplier)); // Ace low
@@ -362,7 +417,7 @@ public class Game {
             score += bestCards.get(i).number();
         }
         if (verbose) {
-            System.out.println(" \tPlayer " + playerIndex + " has score: " + score);
+            System.out.println(" \tPlayer " + playerIndex + " has score: " + score + ";\twith: " + Arrays.toString(bestCards.toArray()));
         }
         return score;
     }
@@ -523,20 +578,28 @@ public class Game {
 
     private static void addHighestStraight(final List<Card> combined, final List<Integer> straights, final List<Card> bestCards) {
         int straightStart = straights.getLast();
+        boolean isAceLowStraight = false;
         if (straightStart == 0) {
+            isAceLowStraight = true;
             bestCards.add(combined.removeLast()); // Ace low straight
-            straightStart = 1; // Adjust to start from 1
+            straightStart = 4; // Adjust to start from 1
         }
         addStraight(combined, bestCards, straightStart);
+        if (isAceLowStraight) {
+            bestCards.addLast(bestCards.removeFirst());
+        }
     }
 
     private static void addStraight(final List<Card> combined, final List<Card> bestCards, final int straightStart) {
-        int value = straightStart;
+        int value = straightStart + 5 - 1;
         int counter = 0;
-        for (int j = 0; j < combined.size() && counter < 5; j++) {
-            if (combined.get(j).number() == value) {
-                bestCards.add(combined.remove(j));
-                value++;
+        if (straightStart == 1) {
+            counter++;
+        }
+        for (int i = combined.size()-1; i >= 0 && bestCards.size() < 5; i--) {
+            if (combined.get(i).number() == value) {
+                bestCards.add(combined.remove(i));
+                value--;
                 counter++;
             }
         }
@@ -742,7 +805,8 @@ public class Game {
         for (int i = 0; i < playerCount; i++) {
             final List<Card> hand = hands.get(i);
             for (int j = 0; j < 2; j++) {
-                hand.add(deck.remove(0));
+                hand.add(deck.get(deckIndex));
+                deckIndex++;
             }
         }
         if (verbose) {
@@ -759,6 +823,7 @@ public class Game {
         hands.clear();
         for (int i = 0; i < playerCount; i++) {
             bets[i] = 0;
+            maxBets[i] = 0;
         }
         Arrays.fill(folded, false);
         prepareCards();
@@ -774,5 +839,17 @@ public class Game {
         for (int i = 0; i < playerCount; i++) {
             System.out.println(" \t" + i + ": " + stacks[i]);
         }
+    }
+
+    public int getWinner() {
+        if (activePlayerCount > 1) {
+            return -1;
+        }
+        for (int i = 0; i < playerCount; i++) {
+            if (stacks[i] > 0) {
+                return i;
+            }
+        }
+        throw new IllegalStateException();
     }
 }

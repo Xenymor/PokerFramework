@@ -15,6 +15,8 @@ public class Main {
         players.add(new AllInBot());
         Game game = new Game(players, 5, 10, 500, true);
 
+        int[] scores = new int[players.size()];
+
         while (game.activePlayerCount > 1) {
             game.prepareRound();
 
@@ -23,6 +25,11 @@ public class Main {
 
             // Print the result of the game
             game.printResult();
+            int winner = game.getWinner();
+            if (winner != -1) {
+                System.out.println(players.get(winner).getClass().getSimpleName() + " (Player " + winner + ") won");
+                scores[winner]++;
+            }
         }
     }
 }
