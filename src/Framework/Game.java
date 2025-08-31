@@ -301,9 +301,10 @@ public class Game {
 
         List<Integer> straights = getStraights(counts);
         boolean isFlush = isFlush(colorCounts);
+        final List<Integer> straightFlushs = getStraightFlushs(combined, colorCounts, isFlush, !straights.isEmpty());
 
         int multiplier;
-        if (isStraightFlush(combined, colorCounts)) {
+        if (!straightFlushs.isEmpty()) {
             multiplier = 9; // Straight Flush
             if (verbose) {
                 System.out.println(" \tPlayer " + playerIndex + " has a Straight Flush.");
@@ -350,7 +351,7 @@ public class Game {
             }
         }
 
-        List<Card> bestCards = getBestCards(combined, counts, countCounts, colorCounts, multiplier, straights);
+        List<Card> bestCards = getBestCards(combined, counts, countCounts, colorCounts, multiplier, straights, straightFlushs);
         Collections.reverse(bestCards);
         long score = bestCards.getLast().number() * ((long) Math.pow(14, multiplier));
         if ((multiplier == 5 || multiplier == 9) && bestCards.getLast().number() == 13) {
@@ -383,9 +384,10 @@ public class Game {
 
         List<Integer> straights = getStraights(counts);
         boolean isFlush = isFlush(colorCounts);
+        final List<Integer> straightFlushs = getStraightFlushs(combined, colorCounts, isFlush, !straights.isEmpty());
 
         int multiplier;
-        if (isStraightFlush(combined, colorCounts)) {
+        if (!straightFlushs.isEmpty()) {
             multiplier = 9; // Straight Flush
         } else if (countCounts[3] > 0) {
             multiplier = 8; // Four of a Kind
@@ -405,7 +407,7 @@ public class Game {
             multiplier = 1; // High Card
         }
 
-        List<Card> bestCards = getBestCards(combined, counts, countCounts, colorCounts, multiplier, straights);
+        List<Card> bestCards = getBestCards(combined, counts, countCounts, colorCounts, multiplier, straights, straightFlushs);
         Collections.reverse(bestCards);  // ??
         long score = bestCards.get(bestCards.size() - 1).number() * ((long) Math.pow(14, multiplier));
         if ((multiplier == 5 || multiplier == 9) && bestCards.get(bestCards.size() - 1).number() == 13) {
@@ -428,31 +430,18 @@ public class Game {
         }
     }
 
-    private static boolean isStraightFlush(List<Card> combined, final int[] colorCounts) {
+    private static List<Integer> getStraightFlushs(List<Card> combined, final int[] colorCounts, final boolean isFlush, final boolean isStraight) {
+        if (!isFlush || !isStraight) {
+            return Collections.emptyList();
+        }
         int mostCommonColor = getMostCommonColor(colorCounts);
-        combined = combined.stream()
+        List<Card> filtered = combined.stream()
                 .filter(card -> card.color() == mostCommonColor)
                 .collect(Collectors.toList());
-        //TODO remove loop? (maybe no need to test for multiple starting cards)
-        for (int i = -1; i < combined.size() - 5; i++) {
-            List<Card> curr = new ArrayList<>(combined.subList(Math.max(i, 0), i + 5));
-            if (i == -1) {
-                final Card highestCard = combined.getLast();
-                if (highestCard.number() == 13) {
-                    curr.addFirst(highestCard);
-                } else {
-                    continue;
-                }
-            }
-            int[] counts = new int[14];
-            int[] currColorCounts = new int[4];
-            countCards(curr, counts, currColorCounts);
-            List<Integer> currStraights = getStraights(counts);
-            if (!currStraights.isEmpty()) {
-                return true; // Found a straight flush
-            }
-        }
-        return false;
+        int[] counts = new int[14];
+        int[] currColorCounts = new int[4];
+        countCards(filtered, counts, currColorCounts);
+        return getStraights(counts);
     }
 
     private static void filterForColor(final List<Card> combined, final int mostCommonColor) {
@@ -478,7 +467,7 @@ public class Game {
     /**
      * Returns combination of 5 best cards; last Card is lowest
      */
-    private static List<Card> getBestCards(final List<Card> combined, final int[] counts, final int[] countCounts, final int[] colorCounts, final int multiplier, final List<Integer> straights) {
+    private static List<Card> getBestCards(final List<Card> combined, final int[] counts, final int[] countCounts, final int[] colorCounts, final int multiplier, final List<Integer> straights, final List<Integer> straightFlushs) {
         List<Card> bestCards = new ArrayList<>();
         switch (multiplier) {
             case 1: // High Card
@@ -502,7 +491,7 @@ public class Game {
                 break;
             case 6: // Flush
                 int mostCommonColor = getMostCommonColor(colorCounts);
-                for (int i = combined.size() - 1; i >= 0 && combined.size() < 5; i--) {
+                for (int i = combined.size() - 1; i >= 0 && bestCards.size() < 5; i--) {
                     if (combined.get(i).color() == mostCommonColor) {
                         bestCards.add(combined.remove(i));
                     }
@@ -524,10 +513,7 @@ public class Game {
             case 9: // Straight Flush
                 mostCommonColor = getMostCommonColor(colorCounts);
                 filterForColor(combined, mostCommonColor);
-                int[] currCounts = new int[14];
-                countCards(combined, currCounts, colorCounts);
-                List<Integer> currStraights = getStraights(counts);
-                addHighestStraight(combined, currStraights, bestCards);
+                addStraight(combined, bestCards, straightFlushs.get(straightFlushs.size() - 1));
                 break;
             default:
                 throw new IllegalStateException("Unexpected multiplier: " + multiplier);
@@ -541,13 +527,17 @@ public class Game {
             bestCards.add(combined.removeLast()); // Ace low straight
             straightStart = 1; // Adjust to start from 1
         }
-        int index = 0;
-        for (int i = straightStart; i < straightStart + 5 && bestCards.size() < 5; i++) {
-            for (int j = index; j < combined.size(); j++, index++) {
-                if (combined.get(j).number() == i) {
-                    bestCards.add(combined.remove(j));
-                    break;
-                }
+        addStraight(combined, bestCards, straightStart);
+    }
+
+    private static void addStraight(final List<Card> combined, final List<Card> bestCards, final int straightStart) {
+        int value = straightStart;
+        int counter = 0;
+        for (int j = 0; j < combined.size() && counter < 5; j++) {
+            if (combined.get(j).number() == value) {
+                bestCards.add(combined.remove(j));
+                value++;
+                counter++;
             }
         }
     }
